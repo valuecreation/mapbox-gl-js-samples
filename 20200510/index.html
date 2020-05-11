@@ -22,6 +22,26 @@
         // center: [139.767125, 35.681236], // starting position [lng, lat]
         // zoom: 9 // starting zoom
     });
+	  
+    /************** Map Control *******************/
+ 　 map.addControl(new mapboxgl.NavigationControl());
+
+    // Add geolocate control to the map.
+    map.addControl(
+      new mapboxgl.GeolocateControl({
+        positionOptions: {
+          enableHighAccuracy: true
+        },
+        trackUserLocation: true
+      })
+    );
+
+    map.addControl(
+      new mapboxgl.ScaleControl({
+        maxWidth: 250,
+        unit: 'metric'
+      })
+    );
   </script>
  
 </body>
