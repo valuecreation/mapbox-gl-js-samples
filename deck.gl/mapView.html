@@ -1,0 +1,77 @@
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>Build a custom layer view using deck.gl - 4.15</title>
+    
+    <!--  deck.gl -->
+    <script src="https://unpkg.com/deck.gl@8.1.0/dist.min.js"></script>
+    <script src="https://unpkg.com/@deck.gl/geo-layers@8.1.0/dist.min.js"></script>
+    <script src="https://unpkg.com/@deck.gl/arcgis@8.1.0/dist.min.js"></script>
+
+    <!-- arcgis js api css 4.15 --> 
+    <link rel="stylesheet" href="https://js.arcgis.com/4.15/esri/themes/light/main.css" />
+
+    <!-- arcgis js api 4.15 -->
+    <script src="https://js.arcgis.com/4.15/"></script>
+
+    <style>
+        html,
+        body,
+        #viewDiv {
+            padding: 0;
+            margin: 0;
+            height: 100%;
+            width: 100%;
+        }
+    </style>
+
+    <script>
+    require(["esri/Map", "esri/views/MapView"], function (Map, MapView) {
+        
+        deck.loadArcGISModules().then(function (arcGIS) {
+            const layer = new arcGIS.DeckLayer();
+            setInterval(function () {
+                layer.deck.layers = [
+                    new deck.TripsLayer({
+                        id: "trips",
+                        data:
+                            "https://raw.githubusercontent.com/uber-common/deck.gl-data/master/examples/trips/trips-v7.json",
+                        getPath: function (d) {
+                            return d.path;
+                        },
+                        getTimestamps: function (d) {
+                            return d.timestamps;
+                        },
+                        getColor: function (d) {
+                            return d.vendor === 0 ? [253, 128, 93] : [23, 184, 190];
+                        },
+                        opacity: 1.0,
+                        widthMinPixels: 4,
+                        rounded: true,
+                        trailLength: 180,
+                        currentTime: (performance.now() % 20000) / 10,
+                        shadowEnabled: false
+                    })
+                ];
+            }, 50);
+
+            const mapView = new MapView({
+                container: "viewDiv",
+                map: new Map({
+                    basemap: "dark-gray-vector",
+                    layers: [layer]
+                }),
+                center: [-74, 40.72],
+                zoom: 14
+            });
+        });
+    });
+</script>
+</head>
+
+    <body>
+        <div id="viewDiv"></div>
+    </body>
+
+</html>
