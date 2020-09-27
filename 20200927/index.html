@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+    <title>Get started with the Isochrone API</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <!-- Import Mapbox GL JS  -->
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.css' rel='stylesheet' />
+    <!-- Import Assembly -->
+    <link href='https://api.mapbox.com/mapbox-assembly/v0.23.2/assembly.min.css' rel='stylesheet'>
+    <script src='https://api.mapbox.com/mapbox-assembly/v0.23.2/assembly.js'></script>
+    <!-- Import jQuery -->
+    <script src='https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js'></script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Create a container for the map -->
+    <div id='map'></div>
+    <!-- Add the sidebar -->
+    <div class='absolute fl my24 mx24 py24 px24 bg-gray-faint round'>
+        <form id='params'>
+            <h4 class='txt-m txt-bold mb6'>トラベルモードの選択:</h4>
+            <div class='mb12 mr12 toggle-group align-center'>
+                <label class='toggle-container'>
+                    <input name='profile' type='radio' value='walking'>
+                    <div class='toggle toggle--active-null toggle--null'>徒歩</div>
+                </label>
+                <label class='toggle-container'>
+                    <input name='profile' type='radio' value='cycling' checked>
+                    <div class='toggle toggle--active-null toggle--null'>自転車</div>
+                </label>
+                <label class='toggle-container'>
+                    <input name='profile' type='radio' value='driving'>
+                    <div class='toggle toggle--active-null toggle--null'>車</div>
+                </label>
+            </div>
+            <h4 class='txt-m txt-bold mb6'>最大期間の選択:</h4>
+            <div class='mb12 mr12 toggle-group align-center'>
+                <label class='toggle-container'>
+                    <input name='duration' type='radio' value='10' checked>
+                    <div class='toggle toggle--active-null toggle--null'>10 分</div>
+                </label>
+                <label class='toggle-container'>
+                    <input name='duration' type='radio' value='20'>
+                    <div class='toggle toggle--active-null toggle--null'>20 分</div>
+                </label>
+                <label class='toggle-container'>
+                    <input name='duration' type='radio' value='30'>
+                    <div class='toggle toggle--active-null toggle--null'>30 分</div>
+                </label>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Add your Mapbox access tokens
+        mapboxgl.accessToken = 'pk.eyJ1IjoidmFsdWVjcmVhdGlvbiIsImEiOiJjanM0Z21xamQwNHRrM3lueXZrOHBxZmNmIn0.oF6cKsx1z4NzUNiJ7RTXNQ';
+        
+        const isoAppData = {
+            params: {
+                urlBase: "https://api.mapbox.com/isochrone/v1/mapbox/",
+                profile: "cycling",
+                minutes: 10
+            },
+            origins: {
+                a: [139.767125, 35.681236]
+            },
+            isos: {
+                a: {}
+            }
+        };
+
+        let map = new mapboxgl.Map({
+            container: 'map', // Specify the container ID
+            style: 'mapbox://styles/mapbox/streets-v11', // Specify which map style to use
+            center: [139.767125, 35.681236], // Specify the starting position
+            zoom: 11.5, // Specify the starting zoom
+            hash: true
+        });
+
+        // Add zoom and rotation controls to the map.
+        map.addControl(new mapboxgl.NavigationControl());
+
+        let scale = new mapboxgl.ScaleControl({
+            maxWidth: 150,
+            unit: 'metric'
+        });
+        map.addControl(scale);
+
+        map.on('load', function() {
+            // When the map loads, add the source and layer
+            map.addSource('iso', {
+                type: 'geojson',
+                data: {
+                "type": 'FeatureCollection',
+                "features": []
+                }
+            });
+
+            map.addLayer({
+                'id': 'isoLayer',
+                'type': 'fill',
+                // Use "iso" as the data source for this layer
+                'source': 'iso',
+                'layout': {},
+                'paint': {
+                // The fill color for the layer is set to a light purple
+                'fill-color': '#5a3fc0',
+                'fill-opacity': 0.3
+                }
+            }, "poi-label");
+
+            // Make the API call
+            getIso(isoAppData.origins.a);
+
+        });
+
+        // Initialize the marker at the query coordinates
+        //marker.setLngLat(lngLat).addTo(map);
+        const originA = new mapboxgl.Marker({
+            draggable: true
+        })
+            .setLngLat(isoAppData.origins.a)
+            .addTo(map);
+
+        // When the point is moved, refresh the isochrones
+        function onDragEndA() {
+            const lngLat = originA.getLngLat();
+            isoAppData.origins.a = [lngLat.lng, lngLat.lat];
+            getIso(isoAppData.origins.a);
+        }
+
+        originA.on("dragend", onDragEndA);
+
+        // Get a single isochrone for a given position and return the GeoJSON
+        const getIso = function(position) {
+            // Build the URL for the isochrone API
+            const isoUrl = isoAppData.params.urlBase + isoAppData.params.profile + "/" + position.join(",") + "?contours_minutes=" +
+                isoAppData.params.minutes + "&polygons=true&access_token=" + mapboxgl.accessToken;
+
+            // Return the GeoJSON
+            fetch(isoUrl)
+                .then(res => res.json()
+            )
+            .then(data => {
+                console.log('Success:', data);
+                map.getSource('iso').setData(data);
+            })
+        };
+
+        // Target the "params" form in the HTML portion of your code
+        const params = document.getElementById('params');
+
+        // When a user changes the value of profile or duration by clicking a button, change the parameter's value and make the API query again
+        params.addEventListener('change', function (e) {
+            if (e.target.name === 'profile') {
+                isoAppData.params.profile = e.target.value;
+                getIso(isoAppData.origins.a);
+            } else if (e.target.name === 'duration') {
+                isoAppData.params.minutes = e.target.value;
+                getIso(isoAppData.origins.a);
+            }
+        });
+
+    </script>
+
+</body>
+</html>
