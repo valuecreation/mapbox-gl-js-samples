@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>GeoJSON Layer</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+
+    <script src="https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.css" rel="stylesheet" />
+    
+    <style>
+      body { 
+          margin:0; 
+          padding:0; 
+      }
+      #map { 
+          position:absolute; 
+          top:0; 
+          bottom:0; 
+          width:100%; 
+      }
+      #speed_basemap_info {
+          margin: 10px;
+          border: 2px solid rgba(0, 0, 0, 0.2);
+          padding: 10px;
+          border-radius: 5px;
+          background: white;
+          width: auto;
+          background-clip: padding-box;
+          position: absolute;
+      }
+      #speed_data_info {
+          margin-top: 55px;
+          margin-left: 10px;
+          border: 2px solid rgba(0, 0, 0, 0.2);
+          padding: 10px;
+          border-radius: 5px;
+          background: white;
+          width: auto;
+          background-clip: padding-box;
+          position: absolute;
+      }
+    </style>
+    </head>
+    <body>
+      <div id="map"></div>
+      <div id='speed_data_info'></div>
+  
+      <script>
+        /**
+         * 各データを設定
+         */
+        const DATA_URL = {
+          LINE_HIGHWAY: 'data/geojson/line_highway.geojson',
+          POINT_POI: 'data/geojson/point_poi.geojson',
+          POLYGON_BUILDING: 'data/geojson/polygon_building.geojson',
+        };
+
+        let step1, step2;
+        let now = Date.now();
+
+        // TO MAKE THE MAP APPEAR YOU MUST
+        // ADD YOUR ACCESS TOKEN FROM
+        // https://account.mapbox.com
+        mapboxgl.accessToken = 'pk.eyJ1IjoidmFsdWVjcmVhdGlvbiIsImEiOiJjanM0Z21xamQwNHRrM3lueXZrOHBxZmNmIn0.oF6cKsx1z4NzUNiJ7RTXNQ';
+        const map = new mapboxgl.Map({
+          container: 'map',
+          style: 'mapbox://styles/mapbox/dark-v10',
+          center: [138.2294267, 38.0497443],
+          zoom: 5,
+          hash: true
+        });
+
+        map.addControl(new mapboxgl.NavigationControl());
+
+        let scale = new mapboxgl.ScaleControl({
+            maxWidth: 200,
+            unit: 'metric'
+        });
+        map.addControl(scale);
+
+        /**
+         * 地図読み込み後実行
+         */
+        map.on('load', function () {
+
+          // ポリゴンのデータソース設定
+          map.addSource('polygon_building', {
+            type: 'geojson',
+            data: DATA_URL.POLYGON_BUILDING
+          });
+
+          // ポリゴンのスタイル設定
+          map.addLayer({
+            "id": "polygon_building",
+            "type": "fill",
+            "source": "polygon_building",
+            "layout": {},
+            "paint": {
+                'fill-color': "#FFE51F",
+                'fill-opacity': 0.5
+            }
+          });
+
+          // ラインのデータソース設定
+          map.addSource('line_highway', {
+            type: 'geojson',
+            data: DATA_URL.LINE_HIGHWAY
+          });
+
+          // ラインのデータソース設定
+          map.addLayer({
+            "id": "line_highway",
+            "type": "line",
+            "source": "line_highway",
+            "layout": {},
+            "paint": {
+                'line-width': 3,
+                'line-opacity':0.5, 
+                'line-color': '#00FFFF'
+            }
+          });
+
+          // ポイントのデータソース設定
+          map.addSource('point_poi', {
+            type: 'geojson',
+            data: DATA_URL.POINT_POI
+          });
+
+          // ポイントのデータソース設定
+          map.addLayer({
+            "id": "point_poi",
+            "type": "circle",
+            "source": "point_poi",
+            "layout": {},
+            "paint": {
+              "circle-radius": 5,
+              "circle-opacity": 0.5,
+              "circle-color": "#7cfc00"
+            }
+          });
+
+        });
+
+        map.on('sourcedataloading', function(e) {
+          console.log('sourcedataloading');
+          let checkLoaded = setInterval(loaded, 100);
+
+          function loaded() {
+            console.log('tiles loaded: ', map.areTilesLoaded());
+            if (map.areTilesLoaded()) {
+              window.clearInterval(checkLoaded);
+              step1 = Date.now();
+              document.getElementById('speed_data_info').innerHTML = "GeoJSON rendered: " + ((step1 - now) / 1000).toFixed(2) + " seconds";
+            }
+          }
+        });
+
+        map.on('zoomstart', function(e) {
+          now = Date.now();
+          console.log('zoomstart:', now);
+          console.log('tiles loaded: ', map.areTilesLoaded());
+          if (map.areTilesLoaded()) {
+            step2 = Date.now();
+            document.getElementById('speed_data_info').innerHTML = "GeoJSON rendered: " + ((step2 - now) / 1000).toFixed(2) + " seconds";
+          }
+        });
+
+      </script>
+    </body>
+</html>

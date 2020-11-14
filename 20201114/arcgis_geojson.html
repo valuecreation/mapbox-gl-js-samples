@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+    <title>GeoJSON Layer</title>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.17/esri/themes/light/main.css"/>
+    <script src="https://js.arcgis.com/4.17/"></script>
+
+    <style>
+      body { 
+        margin:0; 
+        padding:0; 
+      }
+      #viewDiv {
+        position:absolute; 
+        top:0; 
+        bottom:0; 
+        width:100%; 
+      }
+      #speed_info {
+        margin-top: 20px;
+        right: 0;
+        border: 2px solid rgba(0, 0, 0, 0.2);
+        padding: 10px;
+        border-radius: 5px;
+        background: white;
+        width: auto;
+        background-clip: padding-box;
+        position: absolute;
+      }
+    </style>
+
+    <script>
+      /**
+       * 各データを設定
+       */
+      var DATA_URL = {
+        LINE_HIGHWAY: 'data/geojson/line_highway.geojson',
+        POINT_POI: 'data/geojson/point_poi.geojson',
+        POLYGON_BUILDING: 'data/geojson/polygon_building.geojson',
+      };
+
+      // Add a code to calculate drawing performance 
+      var startTime = null;
+      var endTime = null;
+
+      require([
+        "esri/Map",
+        "esri/Basemap",
+        "esri/views/MapView",
+        "esri/layers/VectorTileLayer",
+        "esri/layers/FeatureLayer",
+        "esri/layers/GeoJSONLayer",
+        "esri/core/watchUtils"
+      ], function(Map, Basemap, MapView, VectorTileLayer, FeatureLayer, GeoJSONLayer, watchUtils) {
+
+        // Create a Map      
+        const map = new Map({
+          basemap: "streets-night-vector"
+        });
+
+        const view = new MapView({
+          container: "viewDiv", 
+          map: map,
+          zoom: 5,
+          center: [138.2294267, 38.0497443]
+        });
+
+        let polgyonRenderer = {
+          type: "simple",
+          symbol: {
+            type: "simple-fill",
+            color: [255, 229, 31, 0.5]
+          }
+        };
+
+        let lineRenderer = {
+          type: "simple",
+          symbol: {
+            type: "simple-line",
+            color: [0, 255, 255, 0.5],
+            width: 3
+          }
+        };
+
+        let pointRenderer = {
+          type: "simple",
+          symbol: {
+            type: "simple-marker",
+            color: [124, 252, 0, 0.5],
+            outline: { style: "none", width: 0 },
+            size: 5
+          }
+        };
+
+        const template = {
+          title: "POI Info",
+          content: "POI 名前: {name} ",
+          fieldInfos: [
+            {
+              fieldName: "name"
+            }
+          ]
+        };
+
+        let buildingGeoJSONLayer = new GeoJSONLayer({
+          url: DATA_URL.POLYGON_BUILDING,
+          renderer: polgyonRenderer 
+        });
+
+        let highwayGeoJSONLayer = new GeoJSONLayer({
+          url: DATA_URL.LINE_HIGHWAY,
+          renderer: lineRenderer 
+        });
+
+        let poiGeoJSONLayer = new GeoJSONLayer({
+          url: DATA_URL.POINT_POI,
+          popupTemplate: template,
+          renderer: pointRenderer
+        });
+
+        view.map.addMany([
+            buildingGeoJSONLayer,
+            highwayGeoJSONLayer,
+            poiGeoJSONLayer,
+        ]); 
+        
+        watchUtils.whenTrue(view, 'updating', (updating) => {
+          //console.log('whenTrue: ', updating);
+          startTime = Date.now();
+          //console.log("start: ", startTime);
+          document.getElementById("speed_info").innerHTML = "Calculating ・・・";
+        });
+        
+        watchUtils.whenFalse(view, 'updating', (updating) => {
+          console.log('whenFalse: ', updating);
+          endTime = Date.now();
+          document.getElementById('speed_info').innerHTML = "GeoJSON Loaded: " + ((endTime - startTime) / 1000).toFixed(2) + " seconds";
+        });
+
+      });
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv"></div>
+    <div id='speed_info'></div>
+  </body>
+</html>
