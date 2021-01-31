@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <script src="https://api.tiles.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.js"></script>
+    <link href="https://api.tiles.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.css" rel="stylesheet" />
+    <title>Mapbox GL JS 背景地図表示と GeoJSON 表示</title>
+    <style>
+      html,
+      body,
+      #map {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 14px;
+        color: #323232;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="map"></div>
+  </body>
+
+  <script>
+
+    const apiKey = "AAPKe9fefdc8839248fe8916671a8d6722dd8yIiVGa4rmTt7LKcvznc-up0JQLLS5vW9FQ7RM1TfmZ8uOs5y6TGbZ3Q6QLmlFsB";
+    const basemapEnum = "ArcGIS:Streets";
+
+    const map = new mapboxgl.Map({
+      container: "map", // the id of the div element
+      style: `https://basemaps-api.arcgis.com/arcgis/rest/services/styles/${basemapEnum}?type=style&apiKey=${apiKey}`,
+      zoom: 12, // starting zoom
+      center: [139.72514, 35.60847], // starting location [longitude, latitude]
+      pitch: 45,
+      hash: true
+    });
+
+    map.addControl(new mapboxgl.NavigationControl());
+
+    let scale = new mapboxgl.ScaleControl({
+        maxWidth: 200,
+        unit: 'metric'
+    });
+    map.addControl(scale);
+
+    map.once("load", () => {
+      // This code runs once the base style has finished loading.
+      map.addSource("kankojohoShinagawa100kei", {
+        type: "geojson",
+        data: "https://services5.arcgis.com/HzGpeRqGvs5TMkVr/arcgis/rest/services/kankojohoShinagawa100kei/FeatureServer/0/query?f=pgeojson&where=1=1&outFields=*",
+        cluster: true,
+        clusterRadius: 20, // cluster two kankojohoShinagawa100kei if less than 20 pixels apart
+        clusterMaxZoom: 14 // display all kankojohoShinagawa100kei individually from zoom 14 up
+    　});
+
+    　map.addLayer({
+        id: "kankojohoShinagawa100kei-circle",
+        type: "circle",
+        source: "kankojohoShinagawa100kei",
+
+        paint: {
+          "circle-color": "hsla(0,0%,0%,0.75)",
+          "circle-stroke-width": 1.5,
+          "circle-stroke-color": "white",
+          "circle-radius": ["case", ["get", "cluster"], 10, 5] // 10 pixels for clusters, 5 pixels otherwise
+        }
+    　});
+
+    　map.addLayer({
+        id: "kankojohoShinagawa100kei-cluster-count",
+        type: "symbol",
+        source: "kankojohoShinagawa100kei",
+        layout: {
+          "text-font": ["Arial Bold"],
+          "text-field": ["get", "point_count"],
+          "text-offset": [0, 0.1] // move the label vertically downwards slightly to improve centering
+        },
+        paint: {
+          "text-color": "white"
+        }
+    　});
+
+      map.on("click", "kankojohoShinagawa100kei-circle", (e) => {
+          const trailhead = e.features[0];
+
+          new mapboxgl.Popup()
+            .setHTML(`<b>名前：${trailhead.properties.name}</b>
+                        <br/><b>カテゴリ1：</b>${trailhead.properties.category}
+                        <br/><b>カテゴリ2：</b>${trailhead.properties.category_supplement}
+                        <br/><b>詳細：</b>${trailhead.properties.description_ja}
+                        <br/><b>場所：</b>${trailhead.properties.location}`
+                    )
+            .setLngLat(trailhead.geometry.coordinates)
+            .addTo(map);
+
+      });
+
+      map.on("mouseenter", "kankojohoShinagawa100kei-circle", () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
+
+      map.on("mouseleave", "kankojohoShinagawa100kei-circle", () => {
+        map.getCanvas().style.cursor = "";
+      });
+
+    });
+
+  </script>
+
+</html>
