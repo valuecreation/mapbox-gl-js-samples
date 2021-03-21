@@ -1,0 +1,212 @@
+<html>
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <link href="https://api.tiles.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.css" rel="stylesheet" />
+    <script src="https://api.tiles.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.js"></script>
+
+    <script src="https://unpkg.com/@esri/arcgis-rest-request@3.0.0/dist/umd/request.umd.js"></script>
+    <script src="https://unpkg.com/@esri/arcgis-rest-routing@3.0.0/dist/umd/routing.umd.js"></script>
+    <script src="https://unpkg.com/@esri/arcgis-rest-auth@3.0.0/dist/umd/auth.umd.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+        #infoDiv {
+          background-color: white;
+          position: relative;
+          color: black;
+          font-size: 12pt;
+          margin: 6px;
+          width: 350px;
+        }
+    </style>
+  </head>
+
+  <body>
+    <div id="map"></div>
+    <div id="infoDiv">
+        Mapbox GL JS と Esri の <a href="https://developers.arcgis.com/documentation/mapping-apis-and-location-services/routing/service-areas/
+" target="_blank">到達圏解析 (Service areas)</a> を使用した簡単なデモです。<br/><br/>
+        地図をクリックした地点から 250m、500m、750m、1000m のエリアを表示しています。<br/>
+    </div>
+    <script>
+
+      const apiKey = "AAPK07c4048cb3bb48d2a98ee544297631b918Z5mh7gBlBL6owpfjx6YzXq2gnRQzTZhhFiahyfSYojOmvFgnbBV-aaZT9S3nCb";
+      const basemapEnum = "ArcGIS:Topographic";
+
+      const map = new mapboxgl.Map({
+        container: "map", // the id of the div element
+        style: `https://basemaps-api.arcgis.com/arcgis/rest/services/styles/${basemapEnum}?type=style&apiKey=${apiKey}`,
+        zoom: 14, // starting zoom
+        center: [139.767125, 35.681236],
+        pitch: 45,
+        hash: true
+      });
+
+      map.addControl(new mapboxgl.NavigationControl());
+
+      let scale = new mapboxgl.ScaleControl({
+        maxWidth: 200,
+        unit: 'metric'
+      });
+      map.addControl(scale, "bottom-right");
+
+      function addServiceAreaLayer() {
+
+        map.addSource("servicearea", {
+          type: "geojson",
+          data: {
+            type: "FeatureCollection",
+            features: []
+          }
+        });
+
+        map.addLayer({
+          id: "servicearea-fill",
+          type: "fill",
+          source: "servicearea",
+          paint: {
+            "fill-color": [
+              "match",
+              ["get", "ObjectID"],
+              1,
+              "hsl(210, 80%, 40%)",
+              2,
+              "hsl(210, 80%, 60%)",
+              3,
+              "hsl(210, 80%, 80%)",
+              4,
+              "hsl(210, 80%, 100%)",
+              "transparent"
+            ],
+            "fill-outline-color": "black",
+            "fill-opacity": 0.5
+          }
+        });
+
+      }
+    
+      function addServiceAreaLabelLayer() {
+
+        map.addSource("servicearealabel", {
+          type: "geojson",
+          data: {
+            type: "FeatureCollection",
+            features: []
+          }
+        });
+        
+        map.addLayer({
+          id: "servicearea-label",
+          type: "symbol",
+          source: "servicearealabel",
+          layout: {
+            "icon-allow-overlap": true,
+            'text-field': ['get', 'ToBreak'],
+            'text-font': ["Arial Italic"],
+            'text-size': 20,
+            'text-anchor': 'top'
+          },
+          'paint': {
+            'text-color': 'rgba(0,0,0,0.5)',
+            "text-halo-color": "#fff",
+            "text-halo-width": 2
+           }
+        });
+
+      }
+
+      function addStartingPointLayer() {
+
+        map.addSource("start", {
+          type: "geojson",
+          data: {
+            type: "FeatureCollection",
+            features: []
+          }
+
+        });
+        map.addLayer({
+          id: "start-circle",
+          type: "circle",
+          source: "start",
+
+          paint: {
+            "circle-radius": 6,
+            "circle-color": "white",
+            "circle-stroke-color": "black",
+            "circle-stroke-width": 2
+          }
+        });
+
+      }
+
+      map.on("load", () => {
+        addServiceAreaLayer();
+        addServiceAreaLabelLayer();
+        addStartingPointLayer();
+      });
+
+      map.on("click", (e) => {
+
+        const coordinates = e.lngLat.toArray();
+        const point = {
+          type: "Point",
+          coordinates
+        };
+        map.getSource("start").setData(point);
+
+        const authentication = new arcgisRest.ApiKey({
+          key: apiKey
+        });
+
+        const addParams = { defaultBreaks: [0.25, 0.5, 0.75, 1], // km
+                            impedanceAttributeName: "Kilometers",
+                          }; 
+        
+        arcgisRest
+          .serviceArea({
+            authentication,
+            facilities: [coordinates],
+            params: addParams
+          })
+
+          .then((response) => {
+
+            map.getSource("servicearea").setData(response.saPolygons.geoJson);
+
+            const features = [];
+            for (const value of response.saPolygons.features) {
+                //console.log(value.attributes.ToBreak);
+                let feature = {
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": value.geometry.rings[0][0]
+                    },
+                    "properties": {
+                        "ToBreak": value.attributes.ToBreak * 1000 + " m"
+                    }
+                }
+                features.push(feature);
+            }
+            const geojson = {type: "FeatureCollection", features: features}
+            map.getSource("servicearealabel").setData(geojson);
+            //console.log(features)
+          });
+
+      });
+
+    </script>
+  </body>
+</html>
