@@ -1,0 +1,195 @@
+<html>
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <link href="https://api.tiles.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.css" rel="stylesheet" />
+    <script src="https://api.tiles.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.js"></script>
+
+    <script src="https://unpkg.com/@esri/arcgis-rest-request@3.0.0/dist/umd/request.umd.js"></script>
+    <script src="https://unpkg.com/@esri/arcgis-rest-routing@3.0.0/dist/umd/routing.umd.js"></script>
+    <script src="https://unpkg.com/@esri/arcgis-rest-auth@3.0.0/dist/umd/auth.umd.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+        .legend {
+            background-color: #fff;
+            border-radius: 3px;
+            bottom: 30px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.10);
+            font: 15px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+            padding: 10px;
+            position: absolute;
+            right: 10px;
+            z-index: 1;
+            line-height: 25px;
+            height: 280px;
+        }
+        .legend h4 {
+            margin: 0 0 10px;
+        }
+        .legend div span {
+            border-radius: 50%;
+            display: inline-block;
+            height: 15px;
+            margin-right: 10px;
+            width: 15px;
+            color:orangered
+        }
+    </style>
+  </head>
+
+  <body>
+    <div id="map"></div>
+    <div id='county-legend' class='legend'>
+        <h4>1kmメッシュ別将来推計人口 2030年</h4>
+        <div><span style='background-color: #ffffcc'></span>0 - 100</div>
+        <div><span style='background-color: #ffeda0'></span>100 - 300</div>
+        <div><span style='background-color: #fed976'></span>300 - 500</div>
+        <div><span style='background-color: #feb24c'></span>500 - 800</div>
+        <div><span style='background-color: #fd8d3c'></span>800 - 1300</div>
+        <div><span style='background-color: #fc4e2a'></span>1,300 - 1,800</div>
+        <div><span style='background-color: #e31a1c'></span>1,800 - 2,500</div>
+        <div><span style='background-color: #bd0026'></span>2,500 - 3,300</div>
+        <div><span style='background-color: #940025'></span>3,300 - 4,500</div>
+        <div><span style='background-color: #67001f'></span>4,500 - 7,600</div>
+　  </div>    
+    <script>
+
+      const apiKey = "AAPK07c4048cb3bb48d2a98ee544297631b918Z5mh7gBlBL6owpfjx6YzXq2gnRQzTZhhFiahyfSYojOmvFgnbBV-aaZT9S3nCb";
+      const basemapEnum = "ArcGIS:Topographic";
+
+      const map = new mapboxgl.Map({
+        container: "map", // the id of the div element
+        style: `https://basemaps-api.arcgis.com/arcgis/rest/services/styles/${basemapEnum}?type=style&apiKey=${apiKey}`,
+        zoom: 14, // starting zoom
+        center: [136.72222, 35.39111],
+        pitch: 45,
+        hash: true
+      });
+
+      map.addControl(new mapboxgl.NavigationControl());
+
+      let scale = new mapboxgl.ScaleControl({
+        maxWidth: 250,
+        unit: 'metric'
+      });
+
+      map.addControl(scale);
+
+      // Create a popup, but don't add it to the map yet.
+      let popup = new mapboxgl.Popup({
+        closeButton: false,
+        closeOnClick: false
+      });
+
+      let PT0_2050_1 = ["<", ["get", "PT0_2030"], 100];
+      let PT0_2050_2 = ["all", [">=", ["get", "PT0_2030"], 100], ["<", ["get", "PT0_2030"], 300]];
+      let PT0_2050_3 = ["all", [">=", ["get", "PT0_2030"], 300], ["<", ["get", "PT0_2030"], 500]];
+      let PT0_2050_4 = ["all", [">=", ["get", "PT0_2030"], 500], ["<", ["get", "PT0_2030"], 800]];
+      let PT0_2050_5 = ["all", [">=", ["get", "PT0_2030"], 800], ["<", ["get", "PT0_2030"], 1300]];
+      let PT0_2050_6 = ["all", [">=", ["get", "PT0_2030"], 1300], ["<", ["get", "PT0_2030"], 1800]];
+      let PT0_2050_7 = ["all", [">=", ["get", "PT0_2030"], 1800], ["<", ["get", "PT0_2030"], 2500]];
+      let PT0_2050_8 = ["all", [">=", ["get", "PT0_2030"], 2500], ["<", ["get", "PT0_2030"], 3300]];
+      let PT0_2050_9 = ["all", [">=", ["get", "PT0_2030"], 3300], ["<", ["get", "PT0_2030"], 4500]];
+      let PT0_2050_10 = ["all", [">=", ["get", "PT0_2030"], 4500], ["<", ["get", "PT0_2030"], 7600]];
+
+      let colors = ['#ffffcc', '#ffeda0',
+                    '#fed976', '#feb24c',
+                    '#fd8d3c', '#fc4e2a',
+                    '#e31a1c', '#bd0026',
+                    '#940025', '#67001f'] 
+
+      var hoveredStateId = null;
+
+      map.on("load", () => {
+        
+        map.addSource("layer-id", {
+            type: "vector",
+            tiles: ["https://vectortileservices5.arcgis.com/HzGpeRqGvs5TMkVr/arcgis/rest/services/1km_mesh_suikei_2018/VectorTileServer/tile/{z}/{y}/{x}.pbf"]
+        });
+        
+        map.addLayer({
+            id: "layer-fill",
+            type: "fill",
+            source: "layer-id",
+            "source-layer": "1km_mesh_suikei_2018",
+            paint: {
+                "fill-color":
+                ["case",
+                 PT0_2050_1, colors[0],
+                 PT0_2050_2, colors[1],
+                 PT0_2050_3, colors[2],
+                 PT0_2050_4, colors[3], 
+                 PT0_2050_5, colors[4], 
+                 PT0_2050_6, colors[5], 
+                 PT0_2050_7, colors[6], 
+                 PT0_2050_8, colors[7], 
+                 PT0_2050_9, colors[8], 
+                 PT0_2050_10, colors[9], 
+                 colors[9]
+                ],
+                "fill-outline-color": "white",
+                "fill-opacity": ["case",
+                    ["boolean", ["feature-state", "hover"], false],
+                     1,
+                     0.5
+                ]
+            }
+        });
+
+      });
+
+      map.on("mousemove", "layer-fill", function(e) {
+
+        map.getCanvas().style.cursor = 'pointer';
+
+        if (e.features.length > 0) {
+            if (hoveredStateId !== null) {
+                map.setFeatureState(
+                    { source: 'layer-id', sourceLayer: '1km_mesh_suikei_2018', id: hoveredStateId },
+                    { hover: false }
+                );
+            }
+            hoveredStateId = e.features[0].properties.MESH_ID;
+            map.setFeatureState(
+                { source: 'layer-id', sourceLayer: '1km_mesh_suikei_2018', id: hoveredStateId },
+                { hover: true }
+            );
+        }
+
+        popup.setLngLat(e.lngLat)
+            .setHTML(
+            "<div><b>市区町村コード &nbsp;</b>" + e.features[0].properties.SHICODE + "</div>" + 
+            "<div><b>将来推計人口 2030年 (男女計)</b></div>" + 
+            "<div>" + Math.round(e.features[0].properties.PT0_2030) + " 人</div>")
+            .addTo(map);
+
+      });
+        
+      // When the mouse leaves the state-fill layer, update the feature state of the
+      // previously hovered feature.
+      map.on("mouseleave", "layer-fill", function() {
+        map.getCanvas().style.cursor = '';
+        if (hoveredStateId !== null) {
+            map.setFeatureState(
+                { source: 'layer-id', sourceLayer: '1km_mesh_suikei_2018', id: hoveredStateId },
+                { hover: false }
+            );
+        }
+        hoveredStateId = null;
+        popup.remove();
+      });
+
+    </script>
+  </body>
+</html>
