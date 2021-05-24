@@ -6,10 +6,6 @@
     <link href="https://api.tiles.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.css" rel="stylesheet" />
     <script src="https://api.tiles.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.js"></script>
 
-    <script src="https://unpkg.com/@esri/arcgis-rest-request@3.0.0/dist/umd/request.umd.js"></script>
-    <script src="https://unpkg.com/@esri/arcgis-rest-routing@3.0.0/dist/umd/routing.umd.js"></script>
-    <script src="https://unpkg.com/@esri/arcgis-rest-auth@3.0.0/dist/umd/auth.umd.js"></script>
-
     <style>
         body {
             margin: 0;
@@ -92,16 +88,16 @@
         closeOnClick: false
       });
 
-      let PT0_2050_1 = ["<", ["get", "PT0_2030"], 100];
-      let PT0_2050_2 = ["all", [">=", ["get", "PT0_2030"], 100], ["<", ["get", "PT0_2030"], 300]];
-      let PT0_2050_3 = ["all", [">=", ["get", "PT0_2030"], 300], ["<", ["get", "PT0_2030"], 500]];
-      let PT0_2050_4 = ["all", [">=", ["get", "PT0_2030"], 500], ["<", ["get", "PT0_2030"], 800]];
-      let PT0_2050_5 = ["all", [">=", ["get", "PT0_2030"], 800], ["<", ["get", "PT0_2030"], 1300]];
-      let PT0_2050_6 = ["all", [">=", ["get", "PT0_2030"], 1300], ["<", ["get", "PT0_2030"], 1800]];
-      let PT0_2050_7 = ["all", [">=", ["get", "PT0_2030"], 1800], ["<", ["get", "PT0_2030"], 2500]];
-      let PT0_2050_8 = ["all", [">=", ["get", "PT0_2030"], 2500], ["<", ["get", "PT0_2030"], 3300]];
-      let PT0_2050_9 = ["all", [">=", ["get", "PT0_2030"], 3300], ["<", ["get", "PT0_2030"], 4500]];
-      let PT0_2050_10 = ["all", [">=", ["get", "PT0_2030"], 4500], ["<", ["get", "PT0_2030"], 7600]];
+      let PT0_2030_1 = ["<", ["get", "PT0_2030"], 100];
+      let PT0_2030_2 = ["all", [">=", ["get", "PT0_2030"], 100], ["<", ["get", "PT0_2030"], 300]];
+      let PT0_2030_3 = ["all", [">=", ["get", "PT0_2030"], 300], ["<", ["get", "PT0_2030"], 500]];
+      let PT0_2030_4 = ["all", [">=", ["get", "PT0_2030"], 500], ["<", ["get", "PT0_2030"], 800]];
+      let PT0_2030_5 = ["all", [">=", ["get", "PT0_2030"], 800], ["<", ["get", "PT0_2030"], 1300]];
+      let PT0_2030_6 = ["all", [">=", ["get", "PT0_2030"], 1300], ["<", ["get", "PT0_2030"], 1800]];
+      let PT0_2030_7 = ["all", [">=", ["get", "PT0_2030"], 1800], ["<", ["get", "PT0_2030"], 2500]];
+      let PT0_2030_8 = ["all", [">=", ["get", "PT0_2030"], 2500], ["<", ["get", "PT0_2030"], 3300]];
+      let PT0_2030_9 = ["all", [">=", ["get", "PT0_2030"], 3300], ["<", ["get", "PT0_2030"], 4500]];
+      let PT0_2030_10 = ["all", [">=", ["get", "PT0_2030"], 4500], ["<", ["get", "PT0_2030"], 7600]];
 
       let colors = ['#ffffcc', '#ffeda0',
                     '#fed976', '#feb24c',
