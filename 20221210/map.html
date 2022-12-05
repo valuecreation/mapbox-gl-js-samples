@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Display a map on a webpage</title>
+<title>行政区域データを Mapbox GL JS で表示</title>
 <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
 <link href="https://api.mapbox.com/mapbox-gl-js/v2.11.0/mapbox-gl.css" rel="stylesheet">
 <script src="https://api.mapbox.com/mapbox-gl-js/v2.11.0/mapbox-gl.js"></script>
@@ -33,58 +33,51 @@ body { margin: 0; padding: 0; }
 
     map.addControl(scale);
 
-
-    https://raw.githubusercontent.com/valuecreation/mapbox-gl-js-samples/99d5e63f6d2006d5be4b0fa6a6788545bfb16651/20221210/japan_ver84.geojson
-
     map.on('load', () => {
 
-        map.addSource('tokyo_service_area', {
+        map.addSource('tokyo_area', {
             type: 'geojson',
-            //data: 'https://raw.githubusercontent.com/SENSECARE/japan_ver84/415f12e46a8fbba1b39fbc3186acc2da5ec4f14c/tokyo_service_area.geojson'
-            data: 'https://raw.githubusercontent.com/valuecreation/mapbox-gl-js-samples/99d5e63f6d2006d5be4b0fa6a6788545bfb16651/20221210/japan_ver84.geojson'
+            data: 'https://raw.githubusercontent.com/valuecreation/mapbox-gl-js-samples/4ce73f6067d9931756b6bd2a9829df90c4e4544a/20221210/N03-22_13_220101.geojson'
         });
 
         map.addLayer({
-            'id': 'tokyo_service_area_data',
+            'id': 'tokyo_area_gyosei',
             'type': 'fill',
-            'source': 'tokyo_service_area',
+            'source': 'tokyo_area',
             'paint': {
-                'fill-color': '#1087ea', // blue color fill
-                'fill-opacity': 0.5,
-                'fill-outline-color': '#3d3838',
-           /*
+                // すべて同じ色で表示
+                //'fill-color': '#1087ea', // blue color fill
+                //'fill-opacity': 0.5,
+                //'fill-outline-color': '#3d3838',
             'fill-color':
-            ['case',
-            ['==', ['get', 'SIKUCHOSON'], '目黒区'], '#9da1a8',
-            ['==', ['get', 'SIKUCHOSON'], '品川区'], '#9da1a8',
-            '#9da1a8'
-            ],
+                ['case',
+                    ['==', ['get', 'N03_004'], '目黒区'], '#9da1a8',
+                    ['==', ['get', 'N03_004'], '品川区'], '#9da1a8',
+                    '#9da1a8'
+                ],
             'fill-opacity':
-            ['case',
-                ['==', ['get', 'SIKUCHOSON'], '目黒区'], 0.85,
-                ['==', ['get', 'SIKUCHOSON'], '品川区'], 0.85,
-                0.25
-            ],
+                ['case',
+                    ['==', ['get', 'N03_004'], '目黒区'], 0.85,
+                    ['==', ['get', 'N03_004'], '品川区'], 0.85,
+                    0.15
+                ],
             'fill-outline-color': '#303030'
-            */
             }
         });
 
-        /*
         map.addLayer({
-            'id': 'tokyo_service_area_label',
+            'id': 'tokyo_area_label',
             'type': 'symbol',
-            'source': 'tokyo_service_area',
+            'source': 'tokyo_area',
             'layout': {
                 'text-field':
                 ['case',
-                    ['==', ['get', 'SIKUCHOSON'], '目黒区'], ['get', 'SIKUCHOSON'],
-                    ['==', ['get', 'SIKUCHOSON'], '品川区'], ['get', 'SIKUCHOSON'],
+                    ['==', ['get', 'N03_004'], '目黒区'], ['get', 'N03_004'],
+                    ['==', ['get', 'N03_004'], '品川区'], ['get', 'N03_004'],
                     ''
                 ]
             }
         });
-        */
 
     })
 
