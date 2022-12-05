@@ -22,6 +22,72 @@ body { margin: 0; padding: 0; }
         center: [139.7673068, 35.6809591], // starting position [lng, lat]
         zoom: 9 // starting zoom
     });
+
+    // 地図のコントロールを追加
+    map.addControl(new mapboxgl.NavigationControl(), 'top-left');
+
+    let scale = new mapboxgl.ScaleControl({
+        maxWidth: 250,
+        unit: 'metric'
+    });
+
+    map.addControl(scale);
+
+
+    https://raw.githubusercontent.com/valuecreation/mapbox-gl-js-samples/99d5e63f6d2006d5be4b0fa6a6788545bfb16651/20221210/japan_ver84.geojson
+
+    map.on('load', () => {
+
+        map.addSource('tokyo_service_area', {
+            type: 'geojson',
+            //data: 'https://raw.githubusercontent.com/SENSECARE/japan_ver84/415f12e46a8fbba1b39fbc3186acc2da5ec4f14c/tokyo_service_area.geojson'
+            data: 'https://raw.githubusercontent.com/valuecreation/mapbox-gl-js-samples/99d5e63f6d2006d5be4b0fa6a6788545bfb16651/20221210/japan_ver84.geojson'
+        });
+
+        map.addLayer({
+            'id': 'tokyo_service_area_data',
+            'type': 'fill',
+            'source': 'tokyo_service_area',
+            'paint': {
+                'fill-color': '#1087ea', // blue color fill
+                'fill-opacity': 0.5,
+                'fill-outline-color': '#3d3838',
+           /*
+            'fill-color':
+            ['case',
+            ['==', ['get', 'SIKUCHOSON'], '目黒区'], '#9da1a8',
+            ['==', ['get', 'SIKUCHOSON'], '品川区'], '#9da1a8',
+            '#9da1a8'
+            ],
+            'fill-opacity':
+            ['case',
+                ['==', ['get', 'SIKUCHOSON'], '目黒区'], 0.85,
+                ['==', ['get', 'SIKUCHOSON'], '品川区'], 0.85,
+                0.25
+            ],
+            'fill-outline-color': '#303030'
+            */
+            }
+        });
+
+        /*
+        map.addLayer({
+            'id': 'tokyo_service_area_label',
+            'type': 'symbol',
+            'source': 'tokyo_service_area',
+            'layout': {
+                'text-field':
+                ['case',
+                    ['==', ['get', 'SIKUCHOSON'], '目黒区'], ['get', 'SIKUCHOSON'],
+                    ['==', ['get', 'SIKUCHOSON'], '品川区'], ['get', 'SIKUCHOSON'],
+                    ''
+                ]
+            }
+        });
+        */
+
+    })
+
 </script>
 
 </body>
